@@ -50,10 +50,12 @@ class MotorTL(params: MotorParams, beatBytes: Int)(implicit p: Parameters) exten
         val impl = Module(new MotorChiselModule(params.pwmWidth))
         val motor_en = RegInit(0.U(1.W))
         val motor_dir = RegInit(0.U(1.W))
+        val motor_presc = RegInit(0.U(32.W))
         val motor_speed = RegInit(0.U(params.pwmWidth.W))
 
         impl.io.en := motor_en
         impl.io.dir := motor_dir
+        impl.io.presc := motor_presc
         impl.io.speed_in := motor_speed.asSInt
 
         io.port(i).motor_out_a := impl.io.motor_out_a
@@ -62,9 +64,11 @@ class MotorTL(params: MotorParams, beatBytes: Int)(implicit p: Parameters) exten
         regMap = regMap ++ Seq(
           (0x00 + (i*0x10)) -> Seq(
             RegField.w(params.pwmWidth, motor_speed, RegFieldDesc(s"ch${i}_motor_speed", s"Channel ${i} motor set speed"))),
+          (0x04 + (i*0x10)) -> Seq(
+            RegField.w(32, motor_presc, RegFieldDesc(s"ch${i}_motor_presc", s"Channel ${i} motor PWM prescaler"))),
           (0x08 + (i*0x10)) -> Seq(
             RegField.w(1, motor_en, RegFieldDesc(s"ch${i}_motor_en", s"Channel ${i} motor enable pin"))),
-          (0x0A + (i*0x10)) -> Seq(
+          (0x09 + (i*0x10)) -> Seq(
             RegField.w(1, motor_dir, RegFieldDesc(s"ch${i}_motor_dir", s"Channel ${i} motor implicit direction pin"))),
         )
       }
@@ -102,6 +106,6 @@ trait CanHavePeripheryMotor { this: BaseSubsystem =>
 }
 
 
-class WithMotor(address: BigInt = 0x9000, pwmWidth: Int = 16, channels: Int = 8) extends Config((site, here, up) => {
+class WithMotor(address: BigInt = 0x9000, pwmWidth: Int = 13, channels: Int = 8) extends Config((site, here, up) => {
   case MotorKey => Some(MotorParams(address = address, pwmWidth=pwmWidth, channels=channels))
 })
