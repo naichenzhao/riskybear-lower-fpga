@@ -89,5 +89,36 @@ int main(void) {
   reg_write8(MOTOR_ADDR + 0x08, 0);
 
 
+
+  // change duty cycle again
+  printf("Overflow\n");
+  reg_write16(MOTOR_ADDR, 5000);
+  reg_write8(MOTOR_ADDR + 0x09, 0);
+
+  reg_write8(MOTOR_ADDR + 0x08, 1);
+  printf("Wait a bit...\n");
+  printf("Wait a bit...\n");
+  printf("Wait a bit...\n");
+  printf("Wait a bit...\n");
+  printf("Wait a bit...\n");
+  printf("Wait a bit...\n");
+  reg_write8(MOTOR_ADDR + 0x08, 0);
+
+
+  // change duty cycle again
+  printf("Underflow\n");
+  reg_write16(MOTOR_ADDR, -5000);
+  reg_write8(MOTOR_ADDR + 0x09, 0);
+
+  reg_write8(MOTOR_ADDR + 0x08, 1);
+  printf("Wait a bit...\n");
+  printf("Wait a bit...\n");
+  printf("Wait a bit...\n");
+  printf("Wait a bit...\n");
+  printf("Wait a bit...\n");
+  printf("Wait a bit...\n");
+  reg_write8(MOTOR_ADDR + 0x08, 0);
+
+
   printf("[Test done]\n");
 }

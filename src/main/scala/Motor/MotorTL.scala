@@ -43,6 +43,7 @@ class MotorTL(params: MotorParams, beatBytes: Int)(implicit p: Parameters) exten
   override lazy val module = new MotorImpl
   class MotorImpl extends Impl with HasMotorTopIO {
     val io = IO(new MotorTopIO(params.channels))
+    val max_PWM = (1.S << (params.pwmWidth-1)) - 1.S
     withClockAndReset(clock, reset) {
       var regMap = Seq[(Int, Seq[freechips.rocketchip.regmapper.RegField])]()
 
@@ -51,19 +52,28 @@ class MotorTL(params: MotorParams, beatBytes: Int)(implicit p: Parameters) exten
         val motor_en = RegInit(0.U(1.W))
         val motor_dir = RegInit(0.U(1.W))
         val motor_presc = RegInit(0.U(32.W))
-        val motor_speed = RegInit(0.U(params.pwmWidth.W))
+        val motor_speed = RegInit(0.U(16.W))
 
         impl.io.en := motor_en
         impl.io.dir := motor_dir
         impl.io.presc := motor_presc
-        impl.io.speed_in := motor_speed.asSInt
+
+        // Input motor speed - We also check for overflow and underflow
+        when(motor_speed.asSInt > max_PWM){
+          impl.io.speed_in := max_PWM
+        }.elsewhen(motor_speed.asSInt < -max_PWM){
+          impl.io.speed_in := -max_PWM
+        }.otherwise{
+          impl.io.speed_in := motor_speed(12, 0).asSInt
+        }
+        
 
         io.port(i).motor_out_a := impl.io.motor_out_a
         io.port(i).motor_out_b := impl.io.motor_out_b
 
         regMap = regMap ++ Seq(
           (0x00 + (i*0x10)) -> Seq(
-            RegField.w(params.pwmWidth, motor_speed, RegFieldDesc(s"ch${i}_motor_speed", s"Channel ${i} motor set speed"))),
+            RegField.w(16, motor_speed, RegFieldDesc(s"ch${i}_motor_speed", s"Channel ${i} motor set speed"))),
           (0x04 + (i*0x10)) -> Seq(
             RegField.w(32, motor_presc, RegFieldDesc(s"ch${i}_motor_presc", s"Channel ${i} motor PWM prescaler"))),
           (0x08 + (i*0x10)) -> Seq(

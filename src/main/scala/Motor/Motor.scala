@@ -97,6 +97,6 @@ class MotorPWM(pwm_width: Int) extends Module {
   }.otherwise{
     pwm_val := 0.U
   }
-  io.pwm_out := io.en && (pwm_val < io.duty_in) && (io.duty_in =/= 0.U)
+  io.pwm_out := io.en && (pwm_val <= io.duty_in) && (io.duty_in =/= 0.U)
 }
 
