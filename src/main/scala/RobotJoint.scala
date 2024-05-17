@@ -128,19 +128,19 @@ class RobotJointTL(params: RobotJointParams, beatBytes: Int)(implicit p: Paramet
         regMap = regMap ++ Seq(
           // Control MMIO
           (0x00 + (i*MMIO_SHIFT)) -> Seq(
-            RegField.w(64, joint_target, RegFieldDesc(s"ch${i}_joint_target", s"Channel ${i} joint set target position"))),
+            RegField(32, joint_target, RegFieldDesc(s"ch${i}_joint_target", s"Channel ${i} joint set target position"))),
           (0x08 + (i*MMIO_SHIFT)) -> Seq(
-            RegField.w(1, joint_state, RegFieldDesc(s"ch${i}_joint_mode", s"Channel ${i} joint mode"))),
+            RegField(1, joint_state, RegFieldDesc(s"ch${i}_joint_mode", s"Channel ${i} joint mode"))),
           (0x09 + (i*MMIO_SHIFT)) -> Seq(
-            RegField.w(1, motor_en, RegFieldDesc(s"ch${i}_joint_en", s"Channel ${i} joint enable pin"))),
+            RegField(1, motor_en, RegFieldDesc(s"ch${i}_joint_en", s"Channel ${i} joint enable pin"))),
           (0x0A + (i*MMIO_SHIFT)) -> Seq(
-            RegField.w(1, motor_dir, RegFieldDesc(s"ch${i}_joint_dir", s"Channel ${i} joinr implicit direction pin"))),
+            RegField(1, motor_dir, RegFieldDesc(s"ch${i}_joint_dir", s"Channel ${i} joinr implicit direction pin"))),
           
           // Motor MMIO
           (0x0C + (i*MMIO_SHIFT)) -> Seq(
-            RegField.w(16, motor_speed, RegFieldDesc(s"ch${i}_motor_speed", s"Channel ${i} motor set speed"))),
+            RegField(16, motor_speed, RegFieldDesc(s"ch${i}_motor_speed", s"Channel ${i} motor set speed"))),
           (0x10 + (i*MMIO_SHIFT)) -> Seq(
-            RegField.w(32, motor_presc, RegFieldDesc(s"ch${i}_motor_presc", s"Channel ${i} motor PWM prescaler"))),
+            RegField(32, motor_presc, RegFieldDesc(s"ch${i}_motor_presc", s"Channel ${i} motor PWM prescaler"))),
 
           // QDEC MMIO
           (0x18 + (i*MMIO_SHIFT)) -> Seq(
@@ -190,6 +190,6 @@ trait CanHavePeripheryRobotJoint { this: BaseSubsystem =>
 }
 
 
-class WithRobotJoint(address: BigInt = 0x13000000, channels: Int = 8, pwmWidth: Int = 13,  counterSize:Int = 64) extends Config((site, here, up) => {
+class WithRobotJoint(address: BigInt = 0x13000000, channels: Int = 8, pwmWidth: Int = 13,  counterSize:Int = 32) extends Config((site, here, up) => {
   case RobotJointKey => Some(RobotJointParams(address = address, pwmWidth=pwmWidth, channels=channels, counterSize=counterSize))
 })
