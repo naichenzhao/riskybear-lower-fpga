@@ -88,7 +88,7 @@ class MotorPWM(pwm_width: Int) extends Module {
   val presc_val = RegInit(0.U(32.W))
 
   when(io.en) {
-    when(presc_val === io.presc) {
+    when(presc_val >= io.presc) {
       pwm_val := pwm_val + 1.U
       presc_val := 0.U
     }.otherwise{

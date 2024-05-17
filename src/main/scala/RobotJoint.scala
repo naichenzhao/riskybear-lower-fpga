@@ -67,23 +67,21 @@ class RobotJointTL(params: RobotJointParams, beatBytes: Int)(implicit p: Paramet
         val joint_speed = RegInit(0.S(16.W))
 
         // Motor MMIO registers
-        val motor_en = RegInit(0.U(1.W))
-        val motor_dir = RegInit(0.U(1.W))
+        val motor_en = RegInit(0.U(32.W))
+        val motor_dir = RegInit(0.U(32.W))
         val motor_presc = RegInit(0.U(32.W))
-        val motor_speed = RegInit(0.U(16.W))
+        val motor_speed = RegInit(0.U(32.W))
 
         // Encoder MMIO registers
         val encoder_rst = Wire(DecoupledIO(Bool()))
 
          // PID MMIO registers
-        val PID_Kp = RegInit(0.U(64.W))
-        val PID_Ki = RegInit(0.U(64.W))
-        val PID_Kd = RegInit(2.U(64.W))
-        val PID_shift = RegInit(3.U(32.W))
+        val min_speed = RegInit(850.U(32.W))
+        val cutoff_speed = RegInit(2.U(32.W))
 
         // Motor passthrough values
-        motor.io.en := motor_en
-        motor.io.dir := motor_dir
+        motor.io.en := motor_en.orR
+        motor.io.dir := motor_dir.orR
         motor.io.presc := motor_presc
 
         // Encoder passsthrough values
@@ -96,13 +94,11 @@ class RobotJointTL(params: RobotJointParams, beatBytes: Int)(implicit p: Paramet
         PID.io.target_pos := joint_target.asSInt
         PID.io.curr_pos := encoder.io.count.asSInt
 
-        // PID.io.Kd := PID_Kd.asSInt
-        // PID.io.Kp := PID_Kp.asSInt
-        // PID.io.Ki := PID_Ki.asSInt
-        // PID.io.shift := PID_shift
+        PID.io.min_speed := min_speed.asSInt
+        PID.io.cutoff_speed := cutoff_speed.asSInt
 
         // Input selector - Select whether or not we want to do speed or PID control
-        when(joint_state.asBool) {
+        when(joint_state.orR) {
           joint_speed := PID.io.pid_out(15, 0).asSInt
         }.otherwise{
           joint_speed := motor_speed.asSInt
@@ -129,30 +125,32 @@ class RobotJointTL(params: RobotJointParams, beatBytes: Int)(implicit p: Paramet
           // Control MMIO
           (0x00 + (i*MMIO_SHIFT)) -> Seq(
             RegField(32, joint_target, RegFieldDesc(s"ch${i}_joint_target", s"Channel ${i} joint set target position"))),
+          (0x04 + (i*MMIO_SHIFT)) -> Seq(
+            RegField(32, joint_state, RegFieldDesc(s"ch${i}_joint_mode", s"Channel ${i} joint mode"))),
           (0x08 + (i*MMIO_SHIFT)) -> Seq(
-            RegField(1, joint_state, RegFieldDesc(s"ch${i}_joint_mode", s"Channel ${i} joint mode"))),
-          (0x09 + (i*MMIO_SHIFT)) -> Seq(
-            RegField(1, motor_en, RegFieldDesc(s"ch${i}_joint_en", s"Channel ${i} joint enable pin"))),
-          (0x0A + (i*MMIO_SHIFT)) -> Seq(
-            RegField(1, motor_dir, RegFieldDesc(s"ch${i}_joint_dir", s"Channel ${i} joinr implicit direction pin"))),
+            RegField(32, motor_en, RegFieldDesc(s"ch${i}_joint_en", s"Channel ${i} joint enable pin"))),
+          (0x0C + (i*MMIO_SHIFT)) -> Seq(
+            RegField(32, motor_dir, RegFieldDesc(s"ch${i}_joint_dir", s"Channel ${i} joinr implicit direction pin"))),
           
           // Motor MMIO
-          (0x0C + (i*MMIO_SHIFT)) -> Seq(
-            RegField(16, motor_speed, RegFieldDesc(s"ch${i}_motor_speed", s"Channel ${i} motor set speed"))),
-          (0x10 + (i*MMIO_SHIFT)) -> Seq(
+          (0x20 + (i*MMIO_SHIFT)) -> Seq(
+            RegField(32, motor_speed, RegFieldDesc(s"ch${i}_motor_speed", s"Channel ${i} motor set speed"))),
+          (0x24 + (i*MMIO_SHIFT)) -> Seq(
             RegField(32, motor_presc, RegFieldDesc(s"ch${i}_motor_presc", s"Channel ${i} motor PWM prescaler"))),
 
           // QDEC MMIO
-          (0x18 + (i*MMIO_SHIFT)) -> Seq(
+          (0x30 + (i*MMIO_SHIFT)) -> Seq(
             RegField.r(params.counterSize, encoder.io.count, RegFieldDesc(s"ch${i}_qdec_cnt", s"Channel ${i} qdec read count"))),
-          (0x20 + (i*MMIO_SHIFT)) -> Seq(
+          (0x34 + (i*MMIO_SHIFT)) -> Seq(
             RegField.w(1, encoder_rst, RegFieldDesc(s"ch${i}_qdec_rst", s"Channel ${i} qdec reset pin"))),
 
-          // // PID MMIO
-          // (0x28 + (i*MMIO_SHIFT)) -> Seq(
-          //   RegField.r(64, PID_Kp, RegFieldDesc(s"ch${i}_PID_Kp", s"Channel ${i} PID proportional constant"))),
-          // (0x30 + (i*MMIO_SHIFT)) -> Seq(
-          //   RegField.w(64, PID_Ki,RegFieldDesc(s"ch${i}_PID_Ki", s"Channel ${i} PID integral constant"))),
+          // PID MMIO
+          (0x40 + (i*MMIO_SHIFT)) -> Seq(
+            RegField.r(32, min_speed, RegFieldDesc(s"ch${i}_PID_min_speed", s"Channel ${i} PID minimum motor speed"))),
+          (0x44 + (i*MMIO_SHIFT)) -> Seq(
+            RegField.w(32, cutoff_speed, RegFieldDesc(s"ch${i}_PID_cutoff_speed", s"Channel ${i} PID cutoff motor speed"))),
+          (0x48 + (i*MMIO_SHIFT)) -> Seq(
+            RegField.r(32, PID.io.debug_out.asUInt, RegFieldDesc(s"ch${i}_PID_debug_out", s"Channel ${i} PID raw output"))),
           // (0x38 + (i*MMIO_SHIFT)) -> Seq(
           //   RegField.r(64, PID_Kd, RegFieldDesc(s"ch${i}_PID_Kd", s"Channel ${i} PID derivative constant"))),
           // (0x40 + (i*MMIO_SHIFT)) -> Seq(
