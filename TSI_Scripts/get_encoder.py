@@ -2,7 +2,7 @@ import struct
 import time
 import serial
 
-port = "/dev/ttyUSB1"
+port = "/dev/ttyUSB0"
 baudrate = 115200
 
 ser = serial.Serial(port=port, baudrate=baudrate)
@@ -15,11 +15,19 @@ CMD_WRITE = 0x01
 def readWord(address):
     command = CMD_READ
     header = struct.pack("<LQQ", command, address, 0)
-    # print("read:", header)
+    
+    
+    # bytes_as_bits = header.decode('utf-8')
+    for i in range(len(header)):
+      print("read:", hex(header[i]))
+      
+    print("dpne")
     ser.write(header)
 
     received = ser.read(4)
     rx_data, = struct.unpack("<L", received)
+    for i in range(len(received)):
+      print("ret:", hex(received[i]))
     return rx_data
 
 def writeWord(address, data):
@@ -28,6 +36,9 @@ def writeWord(address, data):
     payload = struct.pack("<L", data)
     buffer = header + payload
     # print("write:", buffer)
+    
+    for i in range(len(buffer)):
+      print("write:", hex(buffer[i]))
     ser.write(buffer)
 
 
@@ -43,32 +54,12 @@ if __name__ == "__main__":
     dir = 0x1300000C + M
     presc = 0x13000024 + M
     
-    writeWord(pos, 0000)
-    writeWord(state, 0x1)
-    writeWord(enable, 0x1)
-    writeWord(dir, 0x01)
-    writeWord(presc, 40)
-    writeWord(speed, 600)
-    writeWord(0x13000044 + M, 2)
+    writeWord(0x13000730, 0xFFFFFFFF)
+    time.sleep(20)
     
 
-    # print("state:", hex(readWord(state)))
-    print("state:", hex(readWord(state)))
-    print("en:", hex(readWord(enable)))
-    print("speed:", hex(readWord(speed)))
-    
-
-    
-
-    
     for i in range(1000):
-      writeWord(pos, 2000)
-      time.sleep(2)
-      writeWord(pos, 0000)
-      time.sleep(2)
-      
-      
-      # # print(hex(readWord(0x13000018)), hex(readWord(0x13000118)), hex(readWord(0x13000218)), hex(readWord(0x13000318)), hex(readWord(0x13000418)), hex(readWord(0x13000518)), hex(readWord(0x13000618)), hex(readWord(0x13000718)))
+      print(hex(readWord(0x13000030)), hex(readWord(0x13000130)), hex(readWord(0x13000230)), hex(readWord(0x13000330)), hex(readWord(0x13000430)), hex(readWord(0x13000530)), hex(readWord(0x13000630)), hex(readWord(0x13000730)))
       # print(int(readWord(0x13000730)), int(readWord(0x13000748)))
-      # time.sleep(0.2)
+      time.sleep(0.2)
 
