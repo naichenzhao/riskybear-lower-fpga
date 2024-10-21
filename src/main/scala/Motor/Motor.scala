@@ -36,6 +36,18 @@ class MotorChiselModule(val pwm_width: Int) extends Module {
   val motor_pin_a = Module(new MotorPWM(pwm_width))
   val motor_pin_b = Module(new MotorPWM(pwm_width))
 
+  val max_PWM = (1.S << (pwm_width-1)) - 1.S
+  val speed_clamped = Wire(SInt(32.W))
+
+  // Input motor speed - We also check for overflow and underflow
+  when(io.speed_in > max_PWM){
+    speed_clamped := max_PWM
+  }.elsewhen(io.speed_in < -max_PWM){
+    speed_clamped := -max_PWM
+  }.otherwise{
+    speed_clamped := io.speed_in(12, 0).asSInt
+ }
+
   // Pass through en values
   motor_pin_a.io.en := io.en
   motor_pin_b.io.en := io.en
@@ -49,20 +61,20 @@ class MotorChiselModule(val pwm_width: Int) extends Module {
   io.motor_out_b := motor_pin_b.io.pwm_out
 
   // Set the speed of each PWM output
-  when(io.speed_in > 0.S) {
+  when(speed_clamped > 0.S) {
     when(io.dir){
-      motor_pin_a.io.duty_in := (io.speed_in).asUInt
+      motor_pin_a.io.duty_in := (speed_clamped).asUInt
       motor_pin_b.io.duty_in := 0.U
     }.otherwise{
       motor_pin_a.io.duty_in := 0.U
-      motor_pin_b.io.duty_in := (io.speed_in).asUInt
+      motor_pin_b.io.duty_in := (speed_clamped).asUInt
     }
   }.otherwise{
     when(io.dir){
       motor_pin_a.io.duty_in := 0.U
-      motor_pin_b.io.duty_in := (-io.speed_in).asUInt
+      motor_pin_b.io.duty_in := (-speed_clamped).asUInt
     }.otherwise{
-      motor_pin_a.io.duty_in := (-io.speed_in).asUInt
+      motor_pin_a.io.duty_in := (-speed_clamped).asUInt
       motor_pin_b.io.duty_in := 0.U
     }
   }
