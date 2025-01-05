@@ -47,7 +47,7 @@ class JointControlleModuleIO extends Bundle {
 }
 
 
-class  JointControllerChiselModule(Kp: Int = 4, Ki: Int = 0, Kd: Int = 0, shift: Int = 2) extends Module {
+class  JointControllerChiselModule(Kp: Int = -64, Ki: Int = 0, Kd: Int = 0, shift: Int = 6) extends Module {
     val io = IO(new JointControlleModuleIO())
 
     // Output value wires
@@ -59,7 +59,7 @@ class  JointControllerChiselModule(Kp: Int = 4, Ki: Int = 0, Kd: Int = 0, shift:
     get_vel.io.value := io.curr_pos
 
     io.pos_out := RegNext(io.curr_pos)
-    io.vel_out := RegNext(get_vel.io.value)
+    io.vel_out := RegNext(get_vel.io.result)
 
     // Define PID modules
     val PID_pos = Module(new PIDModule(Kp = Kp, Ki = Ki, Kd = Kd, shift = shift))

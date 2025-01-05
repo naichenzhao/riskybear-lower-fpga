@@ -26,8 +26,8 @@ class IntegIO extends Bundle {
     val result = Output(SInt(64.W))
 }
 
-// Assuming a clock speed of 60MHz, we want our integrator to run at 10kHz
-class  Integrator(presc: Int = 6000, maxval: Int = 1000, minval: Int = -1000) extends Module {
+// Assuming a clock speed of 50MHz, we want our integrator to run at 10kHz
+class  Integrator(presc: Int = 5000, maxval: Int = 1000, minval: Int = -1000) extends Module {
     val io = IO(new IntegIO())
     val presc_cnt = RegInit(0.U(32.W))
     val summation = RegInit(0.S(64.W))
@@ -66,8 +66,8 @@ class DiffIO extends Bundle {
     val result = Output(SInt(64.W))
 }
 
-// Assuming a clock speed of 60MHz, we want our differentiator to run at 10kHz
-class  Differentiator(presc: Int = 6000) extends Module {
+// Assuming a clock speed of 50MHz, we want our differentiator to run at 100Hz
+class  Differentiator(presc: Int = 500000) extends Module {
     val io = IO(new DiffIO())
     val presc_cnt = RegInit(0.U(32.W))
     val last_val = RegInit(0.S(64.W))
@@ -83,7 +83,7 @@ class  Differentiator(presc: Int = 6000) extends Module {
     }
 
     // We multiply by 10000 since we are 
-    io.result := diff_val * 10000.S
+    io.result := diff_val * 100.S
 }
 
 
@@ -102,7 +102,7 @@ class PIDIO extends Bundle {
 }
 
 // Assuming a clock speed of 60MHz, we want our differentiator to run at 10kHz
-class  PIDModule(Kp: Int = 4, Ki: Int = 0, Kd: Int = 0, shift: Int = 2) extends Module {
+class  PIDModule(Kp: Int = -16, Ki: Int = 0, Kd: Int = 2, shift: Int = 4) extends Module {
     val io = IO(new PIDIO())
     val error = Wire(SInt(64.W))
 

@@ -61,7 +61,7 @@ class RobotJointTL(params: RobotJointParams, beatBytes: Int)(implicit p: Paramet
         // State/target registers
         val joint_target_pos = RegInit(0.U(64.W))
         val joint_target_vel = RegInit(0.U(64.W))
-        val joint_state = RegInit(0.U(1.W))
+        val joint_state = RegInit(0.U(32.W))
 
         // Motor MMIO registers
         val motor_en = RegInit(0.U(32.W))
@@ -107,9 +107,9 @@ class RobotJointTL(params: RobotJointParams, beatBytes: Int)(implicit p: Paramet
         //    - 0: Feedback position control
         //    - 1: Feedback velocity control
         //    - 2: Feed-forward velocity control
-        when(joint_state === 1.U) {
+        when(joint_state(2, 0) === 1.U) {
           motor.io.speed_in := controller.io.pos_target(15, 0).asSInt
-        }.elsewhen(joint_state === 2.U) {
+        }.elsewhen(joint_state(2, 0) === 2.U) {
           motor.io.speed_in := controller.io.vel_target(15, 0).asSInt
         }.otherwise{
           motor.io.speed_in := joint_target_vel.asSInt

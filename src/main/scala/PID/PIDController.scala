@@ -34,7 +34,7 @@ class PIDControllerModuleIO extends Bundle {
 }
 
 
-class  PIDControllerModule(Kp: Int = 4, Ki: Int = 0, Kd: Int = 0, shift: Int = 2) extends Module {
+class  PIDControllerModule(Kp: Int = -12, Ki: Int = 0, Kd: Int = 8, shift: Int = 4) extends Module {
    val io = IO(new PIDControllerModuleIO())
    // Wires for error terms
    val P_error = Wire(SInt(64.W))
